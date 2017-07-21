@@ -8,7 +8,7 @@
  */
 
 
- size_t roundup_pow_of_two(size_t size, unsigned int width);
+ size_t roundup_pow_of_two(size_t size, unsigned int width)
  {
  	if (width == 0) {
  		return 0;
@@ -16,13 +16,13 @@
 
  	size_t max_width = ((size_t)1) << ((width << 3) - 1);
 
- 	if (size > max_width ) {
+ 	if (size >= max_width ) {
  		return max_width;
  	}
 
  	size_t max = ((size_t)1) << ((sizeof(size_t) << 3) - 1);
 
- 	if ( size > max) {
+ 	if ( size >= max) {
  		return max;
  	}
 
