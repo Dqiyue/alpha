@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "alpha_iomap.h": "c",
+        "env.h": "c",
+        "blk.c": "cpp",
+        "alpha_iomap.c": "cpp"
+    }
+}
