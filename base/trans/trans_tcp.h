@@ -16,6 +16,7 @@ typedef unsigned int trans_tcp_t;
 
 trans_tcp_t trans_tcp_create(const char* host,unsigned short port,bool asServer);
 
+
 void 	trans_tcp_release(trans_tcp_t tcp);
 
 #endif // TRANS_TCP_H
