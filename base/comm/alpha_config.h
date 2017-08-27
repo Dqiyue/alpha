@@ -13,6 +13,10 @@
 #define STAGE_DEBUG
 #endif
 
+#ifndef SAFE_CODE
+#define SAFE_CODE
+#endif
+
 //test_builtin_expect.c 
 
 

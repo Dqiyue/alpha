@@ -8,17 +8,21 @@
  */
 
 #include "blk_queue.h"
-#include "../commfunc.h"
+#include <comm/commfunc.h>
 
 
 typedef  struct {
-	unsigned int 	que_size;
+	unsigned int 	size;
 	unsigned int 	rpos;
 	unsigned int 	wpos;
-	blk_t* 		blk_arry;
+	blk_t* 			blks;
 }inter_blk_queue_t;
 
-
+#define INTER_BLK_QUEUE_ACCESS(blk_queue) ((inter_blk_queue_t*)blk_queue)
+#define INTER_BLK_QUEUE_SIZE(blk_queue) (INTER_BLK_QUEUE_ACCESS(blk_queue)->size)
+#define INTER_BLK_QUEUE_BLKS(blk_queue) (INTER_BLK_QUEUE_ACCESS(blk_queue)->blks)
+#define INTER_BLK_QUEUE_RPOS(blk_queue) (INTER_BLK_QUEUE_ACCESS(blk_queue)->rpos)
+#define INTER_BLK_QUEUE_WPOS(blk_queue) (INTER_BLK_QUEUE_ACCESS(blk_queue)->wpos)
 
 
 blk_queue_t blk_queue_create(size_t size)
@@ -33,18 +37,18 @@ blk_queue_t blk_queue_create(size_t size)
 		return 0;
 	}
 
-	blk_queue->que_size = roundup_pow_of_two(size,sizeof(unsigned int));
+	blk_queue->size = roundup_pow_of_two(size,sizeof(unsigned int));
 
-	blk_queue->blk_arry = (blk_t*)malloc(sizeof(blk_t)*blk_queue->que_size);
+	blk_queue->blks = (blk_t*)malloc(sizeof(blk_t)*blk_queue->size);
 
-	if (NULL == blk_queue->blk_arry) {
+	if (NULL == blk_queue->blks) {
 		free(blk_queue);
 		return 0;
 	}
 
 	size_t i;
-	for(i = 0; i < blk_queue->que_size; ++i){
-		blk_queue->blk_arry[i] = 0;
+	for(i = 0; i < blk_queue->size; ++i){
+		blk_queue->blks[i] = 0;
 	}
 
 	blk_queue->rpos = 0;
@@ -55,63 +59,70 @@ blk_queue_t blk_queue_create(size_t size)
 
 void blk_queue_free(blk_queue_t que)
 {
-	inter_blk_queue_t* blk_queue = (inter_blk_queue_t*)que;
+	if (!INTER_BLK_QUEUE_ACCESS(que)) { return; }
 
-	if (blk_queue) {
-		if (blk_queue->blk_arry){
-			free(blk_queue->blk_arry);
-			blk_queue->blk_arry = NULL;
+	#ifdef STAGE_DEBUG
+	assert(INTER_BLK_QUEUE_BLKS(que));
+	#endif
+
+	int i;
+
+	for(i = 0; i != INTER_BLK_QUEUE_SIZE(que); ++i) {
+		if (INTER_BLK_QUEUE_BLKS(que)[i]) {
+			blk_free(INTER_BLK_QUEUE_BLKS(que)[i]);
 		}
-
-		free(blk_queue);
 	}
-
+		
+	free(INTER_BLK_QUEUE_BLKS(que));
+	INTER_BLK_QUEUE_BLKS(que) = 0;
+	free(blk_queue);
 	return;
 }
 
 
 int blk_queue_push(blk_queue_t que, blk_t blk,choice_t  ch)
 {
-	inter_blk_queue_t* blk_queue = (inter_blk_queue_t*)que;
+	#ifdef STAGE_DEBUG
+	assert(que);
+	#endif
 
-	assert(blk_queue);
-
-	if (blk_queue->wpos - blk_queue->rpos >= blk_queue->que_size){
+	if (INTER_BLK_QUEUE_WPOS(que) - INTER_BLK_QUEUE_RPOS(que) >= INTER_BLK_QUEUE_SIZE(que)){
 		
 		if (ch == NOWAIT) {
 			return -1;
 		}
 
-		while (blk_queue->wpos - blk_queue->rpos >= blk_queue->que_size) {
+		while (INTER_BLK_QUEUE_WPOS(que) - INTER_BLK_QUEUE_RPOS(que) >= INTER_BLK_QUEUE_SIZE(que)) {
 			//cond wait
 		}
 	}
 
-	unsigned int wp = blk_queue->wpos & (blk_queue->que_size - 1);
-	blk_queue->blk_arry[wp] = blk;
-	++blk_queue->wpos;
+	unsigned int wp = INTER_BLK_QUEUE_WPOS(que) & (INTER_BLK_QUEUE_SIZE(que) - 1);
+	INTER_BLK_QUEUE_BLKS(que)[wp] = blk;
+	++INTER_BLK_QUEUE_WPOS(que);
 	return 0;
 }
 
 blk_t blk_queue_pop(blk_queue_t que,choice_t  ch)
 {
-	inter_blk_queue_t* blk_queue = (inter_blk_queue_t*)que;
-	assert(blk_queue);
+	#ifdef STAGE_DEBUG
+	assert(que);
+	#endif
 
-	if (blk_queue->wpos == blk_queue->rpos) {
+	if (INTER_BLK_QUEUE_WPOS(que) == INTER_BLK_QUEUE_RPOS(que)) {
 
 		if (NOWAIT == ch){
 			return 0;
 		}
 
-		while (blk_queue->wpos == blk_queue->rpos) {
+		while (INTER_BLK_QUEUE_WPOS(que) == INTER_BLK_QUEUE_RPOS(que)) {
 			//cond wait
 		}
 	}
 
-	unsigned int rp = blk_queue->rpos & (blk_queue->que_size - 1);
-	blk_t blk = blk_queue->blk_arry[rp];
-	++blk_queue->rpos;
+	unsigned int rp = INTER_BLK_QUEUE_RPOS(que) & (INTER_BLK_QUEUE_SIZE(que) - 1);
+	blk_t blk = INTER_BLK_QUEUE_BLKS(que)[rp];
+	++INTER_BLK_QUEUE_RPOS(que);
 
 	return blk;
 }

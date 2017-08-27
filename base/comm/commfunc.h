@@ -29,7 +29,7 @@ size_t roundup_pow_of_two(size_t size,unsigned int width);
 }
 
 
-#define FREE(ptr) { 		\
+#define SAFE_FREE(ptr) { 		\
 	if (ptr) { 		\
 		free(ptr);  	\
 		ptr = NULL; 	\
@@ -37,12 +37,17 @@ size_t roundup_pow_of_two(size_t size,unsigned int width);
 }
 
 
-#define CLOSE_FP(fp) {   	\
+#define SAFE_CLOSE_FP(fp) {   	\
 	if (fp) { 		\
 		fclose(fp);  	\
 		fp = NULL; 	\
 	}			\
 }
+
+
+#define COMM_MALLOC_TYPE(type) ((type*)malloc(sizeof(type)))
+#define COMM_MALLOC_SIZE(type,size) ((type*)malloc(size))
+#define COMM_MALLOC_ARRY(type,num) ((type*)malloc(sizeof(type) * (num))
 
 
 #endif // COMMFUNC_H

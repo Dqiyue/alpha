@@ -6,12 +6,12 @@
  * @description: 
  * 
  */
-#include <stdint.h>
 #include "blk.h"
 
 //define
 typedef enum {WAIT,NOWAIT} choice_t;
 typedef  unsigned int   blk_queue_t;
+enum {default_size = 256}
 
 
 
